@@ -13,7 +13,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\RepoStats::class
+        Commands\RepoStats::class,
+        Commands\RepoMapAuthor::class
     ];
 
     /**
