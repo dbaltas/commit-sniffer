@@ -8,16 +8,16 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 class GitLogRunner
 {
 	protected $_dateRange;
-	protected $_mergeAuthor;
-	protected $_commitsInMerges;
-	protected $_commits;
+	protected $_mergeAuthor = [];
+	protected $_commitsInMerges = [];
+	protected $_commits = [];
 
 	protected $_mergeAuthorsPath;
 	protected $_commitMergePath;
 
 	function setDateRangeLastMonth()
 	{
-		$this->_dateRange = '--since "Feb 1 2017" --until "Mar 1 2017"';
+		$this->_dateRange = '--since "May 1 2017" --until "Jun 1 2017"';
 	}
 
 	function run()
@@ -30,10 +30,7 @@ class GitLogRunner
 		$this->_getMerges();
 		$this->_getCommitsInMerges();
 		$this->_getCommits();
-		// foreach ($this->_commits as $key => $value) {
-		// 	echo "$key\n";
-		// 	var_dump($value);
-		// }
+
 		return $this->_commits;
 	}
 
@@ -103,7 +100,6 @@ class GitLogRunner
 			}
 			fclose($handle);
 		}
-
 	}
 
 	protected function _getCommitsInMerges()

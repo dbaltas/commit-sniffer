@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\RepoManager;
 use App\Models\GitLogRunner;
-use App\Models\Reporter;
+use App\Models\Parser;
 use App\Models\Commit;
 
 class RepoStats extends Command
@@ -43,8 +43,10 @@ class RepoStats extends Command
 	{
 		$repoManager = new RepoManager;
 		$gitLogRunner = new GitLogRunner;
+
 		$repo = $this->argument('repo');
 		$repoManager->takeMeTo($repo);
+
 		$gitLogRunner->setDateRangeLastMonth();
 		$commits = $gitLogRunner->run();
 
@@ -54,7 +56,8 @@ class RepoStats extends Command
 			$commit->save();
 		}
 
-		$reporter = new Reporter;
-		$reporter->report();
+		$parser = new Parser;
+		$parser->parse();
+		$this->table($parser->getHeader(), $parser->getData());
 	}
 }
