@@ -15,7 +15,12 @@ class RepoStats extends Command
      *
      * @var string
      */
-    protected $signature = 'repo:stats {repo}';
+    protected $signature = '
+        repo:stats
+        {repo : Repository path}
+        {--date-from= : Date since}
+        {--date-to= : Date until}
+    ';
 
     /**
      * The console command description.
@@ -47,7 +52,12 @@ class RepoStats extends Command
         $repo = $this->argument('repo');
         $repoManager->takeMeTo($repo);
 
-        $gitLogRunner->setDateRangeLastMonth();
+        $dateFrom = $this->option("date-from");
+        $dateTo = $this->option("date-to");
+        ($dateFrom && $dateTo)
+            ? $gitLogRunner->setDateRangeCustom($dateFrom, $dateTo)
+            : $gitLogRunner->setDateRangeLastMonth();
+
         $commits = $gitLogRunner->run();
 
         Commit::truncate();
