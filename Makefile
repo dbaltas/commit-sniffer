@@ -1,5 +1,5 @@
 test:
-	./vendor/bin/phpunit
+	./vendor/bin/phpunit tests/
 
 lint:
 	./vendor/bin/php-cs-fixer fix --dry-run --diff .

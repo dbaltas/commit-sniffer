@@ -13,7 +13,7 @@ class Parser
     {
         $data = [];
 
-        $mapNewAuthorsToSelf = DB::insert("insert into AuthorMap(author,map) select distinct c.author, c.author from Commit c left join AuthorMap m on m.author=c.author where m.author is null");
+        $mapNewAuthorsToSelf = DB::insert("insert into AuthorMap(author,map) select distinct c.author, c.author from `Commit` c left join AuthorMap m on m.author=c.author where m.author is null");
 
         $mapResults = DB::select('select distinct map from AuthorMap');
         $maps = [];
@@ -40,10 +40,10 @@ class Parser
             'PR %' => 0
         ];
 
-        $allCommits = DB::select('select m.map, count(*) as cnt from Commit c left join AuthorMap m on c.author = m.author group by m.map;');
-        $directCommits = DB::select('select m.map, count(*) as cnt from Commit c left join AuthorMap m on c.author = m.author where c.mergeCommit is null group by m.map;');
-        $trackedCommits = DB::select('select m.map, count(*) as cnt from Commit c left join AuthorMap m on c.author = m.author where c.tracked=1 group by m.map;');
-        $selfMergesCommits = DB::select('select m.map, count(*) as cnt from Commit c left join AuthorMap m on c.author = m.author where c.selfMerged=1 group by m.map;');
+        $allCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author group by m.map;');
+        $directCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.mergeCommit is null group by m.map;');
+        $trackedCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.tracked=1 group by m.map;');
+        $selfMergesCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.selfMerged=1 group by m.map;');
 
         foreach ($allCommits as $key => $row) {
             $data[$row->map]['ALL'] = $row->cnt;
