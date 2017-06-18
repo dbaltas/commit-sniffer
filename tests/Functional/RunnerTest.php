@@ -4,7 +4,7 @@ use Tests\TestCase;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
-class Runner extends TestCase
+class RunnerTest extends TestCase
 {
     /**
      * @group functional
