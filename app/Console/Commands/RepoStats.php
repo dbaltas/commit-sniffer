@@ -55,7 +55,7 @@ class RepoStats extends Command
         $dateFrom = $this->option("date-from");
         $dateTo = $this->option("date-to");
         ($dateFrom && $dateTo)
-            ? $gitLogRunner->setDateRangeCustom($dateFrom, $dateTo)
+            ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
             : $gitLogRunner->setDateRangeLastMonth();
 
         $commits = $gitLogRunner->run();

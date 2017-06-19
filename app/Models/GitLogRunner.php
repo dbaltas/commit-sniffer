@@ -28,7 +28,7 @@ class GitLogRunner
     /**
      * @return void
      */
-    function setDateRangeLastMonth() : void
+    public function setDateRangeLastMonth()
     {
         $this->setDateRange("first day of previous month", "last day of previous month");
     }
@@ -38,14 +38,14 @@ class GitLogRunner
      * @param string $dateTo
      * @return void
      */
-    function setDateRange($dateFrom, $dateTo) : void
+    public function setDateRange($dateFrom, $dateTo)
     {
         $dateFrom = new \DateTime($dateFrom);
         $dateTo = new \DateTime($dateTo);
         $this->_dateRange = $this->formatDateRange($dateFrom, $dateTo);
     }
 
-    function run()
+    public function run()
     {
         if (!$this->_dateRange) {
             throw new \Exception('You need to define a date range');
