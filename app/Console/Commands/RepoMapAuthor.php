@@ -14,7 +14,6 @@ class RepoMapAuthor extends Command
      */
     protected $signature = 'repo:map-author {author} {map}';
 
-
     /**
      * The console command description.
      *
@@ -42,7 +41,12 @@ class RepoMapAuthor extends Command
         $author = $this->argument('author');
         $map = $this->argument('map');
 
-        $authorMap = AuthorMap::where('author', $author)->firstOrFail();
+        $authorMap = AuthorMap::where('author', $author)->first();
+        if (!$authorMap) {
+            $authorMap = new AuthorMap();
+            $authorMap->author = $author;
+        }
+
         $authorMap->map = $map;
         $authorMap->save();
     }

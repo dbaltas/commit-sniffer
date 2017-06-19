@@ -15,12 +15,37 @@ class GitLogRunner
     protected $_mergeAuthorsPath;
     protected $_commitMergePath;
 
-    public function setDateRangeLastMonth()
+    /**
+     * @param \DateTime $dateFrom
+     * @param \DateTime $dateTo
+     * @return string
+     */
+    private function formatDateRange($dateFrom, $dateTo) : string
     {
-        $this->_dateRange = '--since "May 1 2017" --until "Jun 1 2017"';
+        return sprintf('--since "%s" --until "%s"', $dateFrom->format("M d Y"), $dateTo->format("M d Y"));
     }
 
-    public function run()
+    /**
+     * @return void
+     */
+    function setDateRangeLastMonth() : void
+    {
+        $this->setDateRange("first day of previous month", "last day of previous month");
+    }
+
+    /**
+     * @param string $dateFrom
+     * @param string $dateTo
+     * @return void
+     */
+    function setDateRange($dateFrom, $dateTo) : void
+    {
+        $dateFrom = new \DateTime($dateFrom);
+        $dateTo = new \DateTime($dateTo);
+        $this->_dateRange = $this->formatDateRange($dateFrom, $dateTo);
+    }
+
+    function run()
     {
         if (!$this->_dateRange) {
             throw new \Exception('You need to define a date range');
