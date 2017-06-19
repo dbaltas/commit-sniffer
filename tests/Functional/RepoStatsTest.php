@@ -4,7 +4,7 @@ use Tests\TestCase;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
-class RunnerTest extends TestCase
+class RepoStatsTest extends TestCase
 {
     /**
      * @group functional
@@ -17,14 +17,14 @@ class RunnerTest extends TestCase
         $process->run();
 
         if (!$process->isSuccessful()) {
-            $this->fail("Migrate failed");
+            $this->fail("Migrate failed" . $process->getOutput());
         }
 
         $process = new Process($this->getCommand());
         $process->run();
 
         if (!$process->isSuccessful()) {
-            $this->fail("command failed");
+            $this->fail("command failed" . $process->getOutput());
         }
 
         $expectedOutput = <<<OUTPUT
@@ -44,7 +44,7 @@ OUTPUT;
      */
     protected function getCommand($memoryLimit = null)
     {
-        $cmd = sprintf("./artisan repo:stats .");
+        $cmd = sprintf("./artisan repo:stats . --date-from 'May 1 2017'  --date-to 'JUN 1 2017'");
 
         if ($memoryLimit) {
             $cmd = "php -d memory_limit=$memoryLimit " . $cmd;
