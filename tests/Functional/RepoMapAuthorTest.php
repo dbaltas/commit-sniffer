@@ -1,78 +1,49 @@
 <?php
 
 use Tests\TestCase;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
+use App\Models\AuthorMap;
 
 class RepoMapAuthorTest extends TestCase
 {
+    use DatabaseMigrations;
+
     /**
      * @group functional
      */
-    public function testMapAuthorCreateAuthor()
+    public function testMapAuthorCreatesAuthorWhenDoesNotExist()
     {
-        $this->createDatabase();
-
-        $process = new Process($this->getMigrateCommand());
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->fail('Migrate failed');
-        }
-
         $expectedAuthor = 'dbaltas@travelplanet24.com';
         $expectedMap = 'dbaltas@travelplanet24.com';
+        Artisan::call('repo:map-author', [
+            'author' => $expectedAuthor,
+            'map' => $expectedMap,
+        ]);
 
-        $process = new Process($this->getCommand($expectedAuthor, $expectedMap));
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->fail('Command failed');
-        }
-
-        $author = DB::select('SELECT author, map FROM AuthorMap;');
-        $this->assertEquals($expectedAuthor, $author[0]->author);
-        $this->assertEquals($expectedMap, $author[0]->map);
+        $author = AuthorMap::where('author', $expectedAuthor)
+            ->where('map', $expectedMap);
+        $this->assertNotNull($author);
     }
 
     /**
-     * @param string $author
-     * @param string $map
-     * @param string|null $memoryLimit, if null
-     * @return string
+     * @group functional
      */
-    protected function getCommand($author, $map, $memoryLimit = null)
+    public function testMapAuthorUpdatesAuthorWhenAlreadyExists()
     {
-        $cmd = sprintf('./artisan repo:map-author %s %s', $author, $map);
+        Artisan::call('repo:map-author', [
+            'author' => 'foo@travelplanet24.com',
+            'map' => 'foo@travelplanet24.com',
+        ]);
 
-        if ($memoryLimit) {
-            $cmd = 'php -d memory_limit=$memoryLimit ' . $cmd;
-        }
+        $expectedAuthor = 'dbaltas@travelplanet24.com';
+        $expectedMap = 'dbaltas@travelplanet24.com';
+        Artisan::call('repo:map-author', [
+            'author' => $expectedAuthor,
+            'map' => $expectedMap,
+        ]);
 
-        $cmd = 'APP_ENV=functional-test ' . $cmd;
-
-        return $cmd;
-    }
-
-    protected function getMigrateCommand($memoryLimit = null)
-    {
-        $cmd = sprintf('./artisan migrate');
-
-        if ($memoryLimit) {
-            $cmd = 'php -d memory_limit=$memoryLimit ' . $cmd;
-        }
-
-        $cmd = 'APP_ENV=functional-test ' . $cmd;
-
-        return $cmd;
-    }
-
-    protected function createDatabase()
-    {
-        $process = new Process('rm -f database/functional.sqlite && touch database/functional.sqlite');
-
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
+        $author = AuthorMap::where('author', $expectedAuthor)
+            ->where('map', $expectedMap);
+        $this->assertNotNull($author);
     }
 }
