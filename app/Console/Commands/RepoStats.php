@@ -7,6 +7,7 @@ use App\Models\RepoManager;
 use App\Models\GitLogRunner;
 use App\Models\Parser;
 use App\Models\Commit;
+use App\Plugins\GitLogPlugin;
 
 class RepoStats extends Command
 {
@@ -46,8 +47,8 @@ class RepoStats extends Command
      */
     public function handle()
     {
-        $repoManager = new RepoManager;
-        $gitLogRunner = new GitLogRunner;
+        $repoManager = new RepoManager();
+        $gitLogRunner = new GitLogRunner(new GitLogPlugin());
 
         $repo = $this->argument('repo');
         $repoManager->takeMeTo($repo);

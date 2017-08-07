@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use App\Plugins\Plugin;
 
 class GitLogRunner
 {
-    protected $_dateRange;
+    protected $_dateFrom;
+    protected $_dateTo;
     protected $_mergeAuthor = [];
     protected $_commitsInMerges = [];
     protected $_commits = [];
@@ -16,13 +16,11 @@ class GitLogRunner
     protected $_commitMergePath;
 
     /**
-     * @param \DateTime $dateFrom
-     * @param \DateTime $dateTo
-     * @return string
+     * @param Plugin $plugin
      */
-    private function formatDateRange($dateFrom, $dateTo)
+    public function __construct(Plugin $plugin)
     {
-        return sprintf('--since "%s" --until "%s"', $dateFrom->format("M d Y"), $dateTo->format("M d Y"));
+        $this->_plugin = $plugin;
     }
 
     /**
@@ -40,19 +38,18 @@ class GitLogRunner
      */
     public function setDateRange($dateFrom, $dateTo)
     {
-        $dateFrom = new \DateTime($dateFrom);
-        $dateTo = new \DateTime($dateTo);
-        $this->_dateRange = $this->formatDateRange($dateFrom, $dateTo);
+        $this->_dateFrom = new \DateTime($dateFrom);
+        $this->_dateTo = new \DateTime($dateTo);
     }
 
     public function run()
     {
-        if (!$this->_dateRange) {
+        if (!$this->_dateFrom || !$this->_dateTo) {
             throw new \Exception('You need to define a date range');
         }
 
         $this->_getMerges();
-        $this->_getCommitsInMerges();
+        $this->_getMergeCommits();
         $this->_getCommits();
 
         return $this->_commits;
@@ -60,7 +57,7 @@ class GitLogRunner
 
     protected function _getMerges()
     {
-        $lines = $this->_getMergeHistory();
+        $lines = $this->_plugin->getMergeHistory($this->_dateFrom, $this->_dateTo);
 
         foreach ($lines as $line) {
             list($sha1, $author) = explode(' ', $line);
@@ -70,7 +67,7 @@ class GitLogRunner
 
     protected function _getCommits()
     {
-        $lines = $this->_getCommitHistory();
+        $lines = $this->_plugin->getCommitHistory($this->_dateFrom, $this->_dateTo);
 
         foreach ($lines as $line) {
             list($sha1, $author, $committer, $subject) = explode(' ', $line, 4);
@@ -112,57 +109,15 @@ class GitLogRunner
         }
     }
 
-    protected function _getCommitsInMerges()
+    protected function _getMergeCommits()
     {
         foreach ($this->_mergeAuthor as $mergeSha1 => $value) {
-            $lines = $this->_getCommitsInMergeHistory($mergeSha1);
+            $lines = $this->_plugin->getCommitsInMerge($mergeSha1);
 
             foreach ($lines as $line) {
                 $sha1 = trim(preg_replace('/\s\s+/', ' ', $line));
                 $this->_commitsInMerges[$sha1] = $mergeSha1;
             }
         }
-    }
-
-    protected function _getMergeHistory()
-    {
-        $command = sprintf('git log --merges %s --format="%%H %%aE"', $this->_dateRange);
-
-        $process = new Process($command);
-        $process->run();
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-
-        $output = $process->getOutput();
-        return array_filter(explode(PHP_EOL, $output));
-    }
-
-    protected function _getCommitHistory()
-    {
-        $command = sprintf('git log --no-merges %s --format="%%H %%aE %%cE %%s"', $this->_dateRange);
-
-        $process = new Process($command);
-        $process->run();
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-
-        $output = $process->getOutput();
-        return array_filter(explode(PHP_EOL, $output));
-    }
-
-    protected function _getCommitsInMergeHistory($mergeSha1)
-    {
-        $command = sprintf('git log %s^..%s --format="%%H"', $mergeSha1, $mergeSha1);
-
-        $process = new Process($command);
-        $process->run();
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-
-        $output = $process->getOutput();
-        return array_filter(explode(PHP_EOL, $output));
     }
 }
