@@ -16,9 +16,7 @@ class Parser
         $mapNewAuthorsToSelf = DB::insert("insert into AuthorMap(author,map) select distinct c.author, c.author from `Commit` c left join AuthorMap m on m.author=c.author where m.author is null");
 
         $mapResults = DB::select('select distinct map from AuthorMap');
-        $maps = [];
         foreach ($mapResults as $key => $mapResult) {
-            $maps[] = $mapResult->map;
             $data[$mapResult->map] = [
                 'team' => $mapResult->map,
                 'ALL' => 0,

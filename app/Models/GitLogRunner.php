@@ -20,7 +20,7 @@ class GitLogRunner
      * @param \DateTime $dateTo
      * @return string
      */
-    private function formatDateRange($dateFrom, $dateTo) : string
+    private function formatDateRange($dateFrom, $dateTo)
     {
         return sprintf('--since "%s" --until "%s"', $dateFrom->format("M d Y"), $dateTo->format("M d Y"));
     }
@@ -28,9 +28,9 @@ class GitLogRunner
     /**
      * @return void
      */
-    public function setDateRangeLastMonth()
+    public function setDefaultDateRange()
     {
-        $this->setDateRange("first day of previous month", "last day of previous month");
+        $this->setDateRange('first day of previous month', 'last day of previous month');
     }
 
     /**

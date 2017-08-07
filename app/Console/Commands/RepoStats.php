@@ -52,11 +52,11 @@ class RepoStats extends Command
         $repo = $this->argument('repo');
         $repoManager->takeMeTo($repo);
 
-        $dateFrom = $this->option("date-from");
-        $dateTo = $this->option("date-to");
+        $dateFrom = $this->option('date-from');
+        $dateTo = $this->option('date-to');
         ($dateFrom && $dateTo)
             ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
-            : $gitLogRunner->setDateRangeLastMonth();
+            : $gitLogRunner->setDefaultDateRange();
 
         $commits = $gitLogRunner->run();
 
