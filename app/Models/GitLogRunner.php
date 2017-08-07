@@ -51,7 +51,6 @@ class GitLogRunner
             throw new \Exception('You need to define a date range');
         }
 
-        $this->_initTempFiles();
         $this->_getMerges();
         $this->_getCommitsInMerges();
         $this->_getCommits();
@@ -61,117 +60,109 @@ class GitLogRunner
 
     protected function _getMerges()
     {
-        $process = new Process($this->_getMergesCommand());
-        $process->run();
+        $lines = $this->_getMergeHistory();
 
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-
-        $handle = fopen($this->_mergeAuthorsPath, "r");
-        if ($handle) {
-            while (($line = fgets($handle)) !== false) {
-                list($sha1, $author) = explode(' ', $line);
-                $this->_mergeAuthor[$sha1] = trim(preg_replace('/\s\s+/', ' ', $author));
-            }
-            fclose($handle);
+        foreach ($lines as $line) {
+            list($sha1, $author) = explode(' ', $line);
+            $this->_mergeAuthor[$sha1] = trim(preg_replace('/\s\s+/', ' ', $author));
         }
     }
 
     protected function _getCommits()
     {
-        $process = new Process($this->_getCommitsCommand());
-        $process->run();
+        $lines = $this->_getCommitHistory();
 
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
+        foreach ($lines as $line) {
+            list($sha1, $author, $committer, $subject) = explode(' ', $line, 4);
+            $subject = trim(preg_replace('/\s\s+/', ' ', $subject));
 
-        $handle = fopen($this->_commitsPath, "r");
-        if ($handle) {
-            while (($line = fgets($handle)) !== false) {
-                list($sha1, $author, $committer, $subject) = explode(' ', $line, 4);
-                $subject = trim(preg_replace('/\s\s+/', ' ', $subject));
+            $this->_commits[$sha1] = [
+                'sha1' => $sha1,
+                'author' => $author,
+                'committer' => $committer,
+                'subject' => $subject,
+                'mergeCommit' => null,
+                'selfMerged' => false,
+                'tracked' => false,
+                'revert' => false
+            ];
 
-                $this->_commits[$sha1] = [
-                    'sha1' => $sha1,
-                    'author' => $author,
-                    'committer' => $committer,
-                    'subject' => $subject,
-                    'mergeCommit' => null,
-                    'selfMerged' => false,
-                    'tracked' => false,
-                    'revert' => false
-                ];
-
-                if (isset($this->_commitsInMerges[$sha1])) {
-                    $mergeSha1 = $this->_commitsInMerges[$sha1];
-                    $this->_commits[$sha1]['mergeCommit'] = $mergeSha1;
-                    if ($author == $committer && $committer == $this->_mergeAuthor[$mergeSha1]) {
+            if (isset($this->_commitsInMerges[$sha1])) {
+                $mergeSha1 = $this->_commitsInMerges[$sha1];
+                $this->_commits[$sha1]['mergeCommit'] = $mergeSha1;
+                if ($author == $committer && $committer == $this->_mergeAuthor[$mergeSha1]) {
+                    $this->_commits[$sha1]['selfMerged'] = true;
+                }
+            } else {
+                if (preg_match('/\(#[0-9]+\)$/', $subject)) {
+                    $this->_commits[$sha1]['mergeCommit'] = $sha1;
+                    if ($author == $committer || $committer == 'noreply@github.com') {
                         $this->_commits[$sha1]['selfMerged'] = true;
                     }
-                } else {
-                    if (preg_match('/\(#[0-9]+\)$/', $subject)) {
-                        $this->_commits[$sha1]['mergeCommit'] = $sha1;
-                        if ($author == $committer || $committer == 'noreply@github.com') {
-                            $this->_commits[$sha1]['selfMerged'] = true;
-                        }
-                    }
-                }
-
-                if (preg_match('/\[#[A-Z]-[0-9]+\]/', $subject)) {
-                    $this->_commits[$sha1]['tracked'] = true;
-                }
-
-                if (preg_match('/Revert\s\".*\"/', $subject)) {
-                    $this->_commits[$sha1]['revert'] = true;
                 }
             }
-            fclose($handle);
+
+            if (preg_match('/\[#[A-Z]-[0-9]+\]/', $subject)) {
+                $this->_commits[$sha1]['tracked'] = true;
+            }
+
+            if (preg_match('/Revert\s\".*\"/', $subject)) {
+                $this->_commits[$sha1]['revert'] = true;
+            }
         }
     }
 
     protected function _getCommitsInMerges()
     {
         foreach ($this->_mergeAuthor as $mergeSha1 => $value) {
-            $process = new Process($this->_getCommitsInMergeCommand($mergeSha1));
-            $process->run();
+            $lines = $this->_getCommitsInMergeHistory($mergeSha1);
 
-            // executes after the command finishes
-            if (!$process->isSuccessful()) {
-                throw new ProcessFailedException($process);
-            }
-
-            $handle = fopen($this->_commitMergePath, "r");
-            if ($handle) {
-                while (($line = fgets($handle)) !== false) {
-                    $sha1 = trim(preg_replace('/\s\s+/', ' ', $line));
-                    $this->_commitsInMerges[$sha1] = $mergeSha1;
-                }
-                fclose($handle);
+            foreach ($lines as $line) {
+                $sha1 = trim(preg_replace('/\s\s+/', ' ', $line));
+                $this->_commitsInMerges[$sha1] = $mergeSha1;
             }
         }
     }
 
-    protected function _initTempFiles()
+    protected function _getMergeHistory()
     {
-        $this->_mergeAuthorsPath = tempnam(sys_get_temp_dir(), 'merge_authors.txt');
-        $this->_commitMergePath = tempnam(sys_get_temp_dir(), 'commit_merge.txt');
-        $this->_commitsPath = tempnam(sys_get_temp_dir(), 'commits.txt');
+        $command = sprintf('git log --merges %s --format="%%H %%aE"', $this->_dateRange);
+
+        $process = new Process($command);
+        $process->run();
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $output = $process->getOutput();
+        return array_filter(explode(PHP_EOL, $output));
     }
 
-    protected function _getMergesCommand()
+    protected function _getCommitHistory()
     {
-        return sprintf('git log --merges %s --format="%%H %%aE" > %s', $this->_dateRange, $this->_mergeAuthorsPath);
+        $command = sprintf('git log --no-merges %s --format="%%H %%aE %%cE %%s"', $this->_dateRange);
+
+        $process = new Process($command);
+        $process->run();
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $output = $process->getOutput();
+        return array_filter(explode(PHP_EOL, $output));
     }
 
-    protected function _getCommitsCommand()
+    protected function _getCommitsInMergeHistory($mergeSha1)
     {
-        return sprintf('git log --no-merges %s --format="%%H %%aE %%cE %%s" > %s', $this->_dateRange, $this->_commitsPath);
-    }
+        $command = sprintf('git log %s^..%s --format="%%H"', $mergeSha1, $mergeSha1);
 
-    protected function _getCommitsInMergeCommand($mergeSha1)
-    {
-        return sprintf('git log %s^..%s --format="%%H" > %s', $mergeSha1, $mergeSha1, $this->_commitMergePath);
+        $process = new Process($command);
+        $process->run();
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $output = $process->getOutput();
+        return array_filter(explode(PHP_EOL, $output));
     }
 }
