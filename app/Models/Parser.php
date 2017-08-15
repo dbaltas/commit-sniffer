@@ -26,7 +26,8 @@ class Parser
                 'Self Merges' => 0,
                 'Tracked' => 0,
                 'Tracked %' => 0,
-                'PR %' => 0
+                'PR %' => 0,
+                'Reverts' => 0
             ];
         }
 
@@ -37,13 +38,15 @@ class Parser
             'Self Merges' => 0,
             'Tracked' => 0,
             'Tracked %' => 0,
-            'PR %' => 0
+            'PR %' => 0,
+            'Reverts' => 0
         ];
 
         $allCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author group by m.map;');
         $directCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.mergeCommit is null group by m.map;');
         $trackedCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.tracked=1 group by m.map;');
         $selfMergesCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.selfMerged=1 group by m.map;');
+        $revertCommits = DB::select('select m.map, count(*) as cnt from `Commit` c left join AuthorMap m on c.author = m.author where c.revert = 1 group by m.map;');
 
         foreach ($allCommits as $key => $row) {
             $data[$row->map]['ALL'] = $row->cnt;
@@ -65,12 +68,17 @@ class Parser
             $data['TOTAL']['Self Merges'] += $row->cnt;
         }
 
+        foreach ($revertCommits as $key => $row) {
+            $data[$row->map]['Reverts'] = $row->cnt;
+            $data['TOTAL']['Reverts'] += $row->cnt;
+        }
+
         foreach ($data as $key => $value) {
             $data[$key]['Tracked %'] = ($value['ALL'] > 0) ? number_format(100*$value['Tracked']/$value['ALL'], 2) : 'N/A';
             $data[$key]['PR %'] = ($value['ALL'] > 0) ? number_format(100*($value['ALL']-$value['Direct']-$value['Self Merges'])/$value['ALL'], 2) : 'N/A';
         }
 
-        $this->_header = ['team','ALL','Direct','Self Merges','Tracked','Tracked %','PR %'];
+        $this->_header = ['team','ALL','Direct','Self Merges','Tracked','Tracked %','PR %','Reverts'];
         $this->_data = $data;
         return;
     }
