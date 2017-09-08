@@ -100,7 +100,8 @@ class GitLogRunner
                     'subject' => $subject,
                     'mergeCommit' => null,
                     'selfMerged' => false,
-                    'tracked' => false
+                    'tracked' => false,
+                    'revert' => false
                 ];
 
                 if (isset($this->_commitsInMerges[$sha1])) {
@@ -120,6 +121,10 @@ class GitLogRunner
 
                 if (preg_match('/\[#[A-Z]-[0-9]+\]/', $subject)) {
                     $this->_commits[$sha1]['tracked'] = true;
+                }
+
+                if (preg_match('/Revert\s\".*\"/', $subject)) {
+                    $this->_commits[$sha1]['revert'] = true;
                 }
             }
             fclose($handle);
