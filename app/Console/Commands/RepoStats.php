@@ -7,6 +7,7 @@ use App\Models\RepoManager;
 use App\Models\GitLogRunner;
 use App\Models\Parser;
 use App\Models\Commit;
+use App\Plugins\GitLogPlugin;
 
 class RepoStats extends Command
 {
@@ -47,17 +48,17 @@ class RepoStats extends Command
      */
     public function handle()
     {
-        $repoManager = new RepoManager;
-        $gitLogRunner = new GitLogRunner;
+        $repoManager = new RepoManager();
+        $gitLogRunner = new GitLogRunner(new GitLogPlugin());
 
         $repo = $this->argument('repo');
         $repoManager->takeMeTo($repo);
 
-        $dateFrom = $this->option("date-from");
-        $dateTo = $this->option("date-to");
+        $dateFrom = $this->option('date-from');
+        $dateTo = $this->option('date-to');
         ($dateFrom && $dateTo)
             ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
-            : $gitLogRunner->setDateRangeLastMonth();
+            : $gitLogRunner->setDefaultDateRange();
         $metrics = $this->option('metrics');
 
         $commits = $gitLogRunner->run();
