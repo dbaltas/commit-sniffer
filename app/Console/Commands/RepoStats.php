@@ -21,6 +21,7 @@ class RepoStats extends Command
         {repo : Repository path}
         {--date-from= : Date since}
         {--date-to= : Date until}
+        {--metrics= : Comma separated metric names to be displayed}
     ';
 
     /**
@@ -58,6 +59,7 @@ class RepoStats extends Command
         ($dateFrom && $dateTo)
             ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
             : $gitLogRunner->setDefaultDateRange();
+        $metrics = $this->option('metrics');
 
         $commits = $gitLogRunner->run();
 
@@ -67,8 +69,9 @@ class RepoStats extends Command
             $commit->save();
         }
 
-        $parser = new Parser;
-        $parser->parse();
+        $parser = new Parser();
+        $parser->setMetrics($metrics)
+            ->parse();
         $this->table($parser->getHeader(), $parser->getData());
     }
 }
