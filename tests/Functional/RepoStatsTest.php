@@ -7,9 +7,9 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 class RepoStatsTest extends TestCase
 {
     /**
-     * @group functional
+     * @return void
      */
-    public function testRepoStatsOnSameRepo()
+    public function setUp()
     {
         $this->createDatabase();
 
@@ -17,9 +17,15 @@ class RepoStatsTest extends TestCase
         $process->run();
 
         if (!$process->isSuccessful()) {
-            $this->fail("Migrate failed" . $process->getOutput());
+            $this->fail('Migrate failed' . $process->getOutput());
         }
+    }
 
+    /**
+     * @group functional
+     */
+    public function testRepoStatsOnSameRepo()
+    {
         $process = new Process($this->getCommand());
         $process->run();
 
@@ -44,15 +50,6 @@ OUTPUT;
      */
     public function testRepoStatsWithSpecificMetricsOnSameRepo()
     {
-        $this->createDatabase();
-
-        $process = new Process($this->getMigrateCommand());
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            $this->fail("Migrate failed" . $process->getOutput());
-        }
-
         $process = new Process($this->getCommandWithMetricsArgument());
         $process->run();
 
@@ -77,15 +74,6 @@ OUTPUT;
      */
     public function testRepoStatsWithInvalidDatesReturnsError()
     {
-        $this->createDatabase();
-
-        $process = new Process($this->getMigrateCommand());
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            $this->fail('Migrate failed' . $process->getOutput());
-        }
-
         $process = new Process($this->getCommand(null, 'fooDateFrom', 'barDateTo'));
         $process->run();
 
@@ -135,6 +123,10 @@ OUTPUT;
         return $cmd;
     }
 
+    /**
+     * @param null $memoryLimit
+     * @return string
+     */
     protected function getMigrateCommand($memoryLimit = null)
     {
         $cmd = sprintf("./artisan migrate");
@@ -148,6 +140,10 @@ OUTPUT;
         return $cmd;
     }
 
+    /**
+     * @return void
+     * @throws ProcessFailedException
+     */
     protected function createDatabase()
     {
         $process = new Process('rm -f database/functional.sqlite && touch database/functional.sqlite');
