@@ -73,12 +73,41 @@ OUTPUT;
     }
 
     /**
-     * @param string|null $memoryLimit, if null
+     * @group functional
+     */
+    public function testRepoStatsWithInvalidDatesReturnsError()
+    {
+        $this->createDatabase();
+
+        $process = new Process($this->getMigrateCommand());
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            $this->fail('Migrate failed' . $process->getOutput());
+        }
+
+        $process = new Process($this->getCommand(null, 'fooDateFrom', 'barDateTo'));
+        $process->run();
+
+        $this->assertFalse($process->isSuccessful());
+        $expectedOutput = <<<OUTPUT
+Invalid date given.
+
+OUTPUT;
+        $this->assertEquals($expectedOutput, $process->getOutput());
+    }
+
+    /**
+     * @param string|null $memoryLimit
+     * @param string|null $dateFrom
+     * @param string|null $dateTo
      * @return string
      */
-    protected function getCommand($memoryLimit = null)
+    protected function getCommand($memoryLimit = null, $dateFrom = null, $dateTo = null)
     {
-        $cmd = sprintf("./artisan repo:stats . --date-from 'May 1 2017' --date-to 'JUN 1 2017'");
+        $dateFrom = $dateFrom ?: 'May 1 2017';
+        $dateTo = $dateTo ?: 'JUN 1 2017';
+        $cmd = sprintf("./artisan repo:stats . --date-from='$dateFrom' --date-to='$dateTo'");
 
         if ($memoryLimit) {
             $cmd = "php -d memory_limit=$memoryLimit " . $cmd;
@@ -90,7 +119,7 @@ OUTPUT;
     }
 
     /**
-     * @param string|null $memoryLimit, if null
+     * @param string|null $memoryLimit
      * @return string
      */
     protected function getCommandWithMetricsArgument($memoryLimit = null)

@@ -56,9 +56,14 @@ class RepoStats extends Command
 
         $dateFrom = $this->option('date-from');
         $dateTo = $this->option('date-to');
-        ($dateFrom && $dateTo)
-            ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
-            : $gitLogRunner->setDefaultDateRange();
+        try {
+            ($dateFrom && $dateTo)
+                ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
+                : $gitLogRunner->setDefaultDateRange();
+        } catch (\Exception $ex) {
+            $this->line('Invalid date given.');
+            exit(1);
+        }
         $metrics = $this->option('metrics');
 
         $commits = $gitLogRunner->run();
