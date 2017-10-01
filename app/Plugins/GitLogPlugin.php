@@ -7,6 +7,21 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class GitLogPlugin extends Plugin
 {
+    private $_path;
+
+    /**
+     * @param array $options
+     * @return GitLogPlugin
+     * @throws \Exception
+     */
+    public function __construct($options)
+    {
+        if (!isset($options['path'])) {
+            throw new \Exception('Repository path not provided.');
+        }
+        $this->_path = $options['path'];
+    }
+
     /**
      * @param \DateTime $dateFrom
      * @param \DateTime $dateTo
@@ -16,7 +31,7 @@ class GitLogPlugin extends Plugin
     {
         $dateRange = $this->formatDateRange($dateFrom, $dateTo);
 
-        $command = sprintf('git log --no-merges %s --format="%%H %%aE %%cE %%s"', $dateRange);
+        $command = sprintf('git -C %s log --no-merges %s --format="%%H %%aE %%cE %%s"', $this->_path, $dateRange);
 
         $process = new Process($command);
         $process->run();
@@ -37,7 +52,7 @@ class GitLogPlugin extends Plugin
     {
         $dateRange = $this->formatDateRange($dateFrom, $dateTo);
 
-        $command = sprintf('git log --merges %s --format="%%H %%aE"', $dateRange);
+        $command = sprintf('git -C %s log --merges %s --format="%%H %%aE"', $this->_path, $dateRange);
 
         $process = new Process($command);
         $process->run();
@@ -55,7 +70,7 @@ class GitLogPlugin extends Plugin
      */
     public function getCommitsInMerge($mergeSha1)
     {
-        $command = sprintf('git log %s^..%s --format="%%H"', $mergeSha1, $mergeSha1);
+        $command = sprintf('git -C %s log %s^..%s --format="%%H"', $this->_path, $mergeSha1, $mergeSha1);
 
         $process = new Process($command);
         $process->run();
