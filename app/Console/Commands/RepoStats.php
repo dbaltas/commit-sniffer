@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\RepoManager;
 use App\Models\GitLogRunner;
 use App\Models\Parser;
 use App\Models\Commit;
@@ -34,7 +33,7 @@ class RepoStats extends Command
     /**
      * Create a new command instance.
      *
-     * @return void
+     * @return RepoStats
      */
     public function __construct()
     {
@@ -48,11 +47,12 @@ class RepoStats extends Command
      */
     public function handle()
     {
-        $repoManager = new RepoManager();
-        $gitLogRunner = new GitLogRunner(new GitLogPlugin());
-
         $repo = $this->argument('repo');
-        $repoManager->takeMeTo($repo);
+
+        $plugin = new GitLogPlugin([
+            'path' => $repo
+        ]);
+        $gitLogRunner = new GitLogRunner($plugin);
 
         $dateFrom = $this->option('date-from');
         $dateTo = $this->option('date-to');
