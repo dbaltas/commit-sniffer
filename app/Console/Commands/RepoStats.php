@@ -73,10 +73,10 @@ class RepoStats extends Command
             $commit->save();
         }
 
-        $parser = new ReporterService();
+        $reporter = new ReporterService();
         $metrics = $this->option('metrics');
-        $parser->setMetrics($metrics)
+        $reporter->setMetrics($metrics)
             ->prepare();
-        $this->table($parser->getHeader(), $parser->getData());
+        $this->table($reporter->getHeader(), $reporter->getData());
     }
 }
