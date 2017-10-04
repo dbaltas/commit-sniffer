@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Models;
+namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
-class Parser
+class ReporterService
 {
     protected $_header;
     protected $_data;
     protected $_metrics;
 
-    public function parse()
+    public function prepare()
     {
         $data = [];
 

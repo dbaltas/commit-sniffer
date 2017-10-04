@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Services;
 
 use App\Plugins\Plugin;
 
-class GitLogRunner
+class ParserService
 {
     protected $_dateFrom;
     protected $_dateTo;
@@ -42,7 +42,7 @@ class GitLogRunner
         $this->_dateTo = new \DateTime($dateTo);
     }
 
-    public function run()
+    public function parse()
     {
         if (!$this->_dateFrom || !$this->_dateTo) {
             throw new \Exception('You need to define a date range');

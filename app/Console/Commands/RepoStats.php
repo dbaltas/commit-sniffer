@@ -3,8 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\GitLogRunner;
-use App\Models\Parser;
+
+use App\Services\ParserService;
+use App\Services\ReporterService;
 use App\Models\Commit;
 use App\Plugins\GitLogPlugin;
 
@@ -52,21 +53,19 @@ class RepoStats extends Command
         $plugin = new GitLogPlugin([
             'path' => $repo
         ]);
-        $gitLogRunner = new GitLogRunner($plugin);
+        $parser = new ParserService($plugin);
 
         $dateFrom = $this->option('date-from');
         $dateTo = $this->option('date-to');
         try {
             ($dateFrom && $dateTo)
-                ? $gitLogRunner->setDateRange($dateFrom, $dateTo)
-                : $gitLogRunner->setDefaultDateRange();
+                ? $parser->setDateRange($dateFrom, $dateTo)
+                : $parser->setDefaultDateRange();
         } catch (\Exception $ex) {
             $this->line('Invalid date given.');
             exit(1);
         }
-        $metrics = $this->option('metrics');
-
-        $commits = $gitLogRunner->run();
+        $commits = $parser->parse();
 
         Commit::truncate();
         foreach ($commits as $key => $commitAttributes) {
@@ -74,9 +73,10 @@ class RepoStats extends Command
             $commit->save();
         }
 
-        $parser = new Parser();
-        $parser->setMetrics($metrics)
-            ->parse();
-        $this->table($parser->getHeader(), $parser->getData());
+        $reporter = new ReporterService();
+        $metrics = $this->option('metrics');
+        $reporter->setMetrics($metrics)
+            ->prepare();
+        $this->table($reporter->getHeader(), $reporter->getData());
     }
 }
